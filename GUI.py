@@ -1,8 +1,10 @@
 import tkinter as tk
 import math
-from itertools import product
 import numpy as np
-from time import sleep
+
+from itertools import product
+from board import Board
+from pieces import Piece
 
 # returns a list of six tuples representing the coordinates of the corners of a hexagon centred at (x, y)
 def get_hexagon_points(radius, x, y):
@@ -29,6 +31,7 @@ class HexChessCanvas():
 		self.tile_radius = tile_radius
 		self.n = n
 		self.selected_tile = None
+		self.board = Board()
 
 		# here we create a set of 3D coordinates to represent hexagonal space
 		axis = list(range(-n, n+1))
@@ -42,6 +45,9 @@ class HexChessCanvas():
 
 		# binds the onclick method to the right mouse button
 		canvas.bind("<Button-1>", self.onclick)
+
+		p = Piece()
+		self.board.add_piece(p)
 
 		self.draw()
 
@@ -103,6 +109,23 @@ class HexChessCanvas():
 			x, y = self.hex_to_cart(self.selected_tile)
 			verts = get_hexagon_points(self.tile_radius, x, y)
 			self.canvas.create_polygon(*verts, fill='yellow', outline='black')
+
+			# if the tile selected has a piece on it
+			if (np.array(self.selected_tile).tobytes() in self.board.pieces):
+				p = self.board.pieces[np.array(self.selected_tile).tobytes()]
+				moves = p.get_valid_moves('board')
+
+				for tile in moves:
+					x, y = self.hex_to_cart(tile)
+					verts = get_hexagon_points(self.tile_radius/2, x, y)
+					self.canvas.create_polygon(*verts, fill='grey', outline='black')
+
+		# draw each of the pieces:
+		for p in self.board.pieces.values():
+			hex_psn = p.position
+			x, y = self.hex_to_cart(hex_psn)
+			verts = get_hexagon_points(self.tile_radius/2, x, y)
+			self.canvas.create_polygon(*verts, fill='black', outline='black')
 
 def main():
 	window = tk.Tk()
